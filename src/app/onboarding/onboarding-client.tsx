@@ -1,30 +1,22 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { saveOnboardingData } from "@/actions/onboarding";
+import { courseSchema } from "@/actions/type";
+import { AddCourseModal } from "@/components/add-course-modal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
+import { milestone } from "@/lib/utils";
+import { createClient } from "@/utils/supabase/client";
+import { BookOpenIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { CalendarIcon } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { match } from "ts-pattern";
-import { AnimatePresence, motion } from "motion/react";
-import { milestone } from "@/lib/utils";
-import { PlusIcon, TrashIcon, BookOpenIcon } from "@phosphor-icons/react";
-import { CalendarIcon } from "lucide-react";
-import { saveOnboardingData } from "@/actions/onboarding";
-import { createClient } from "@/utils/supabase/client";
-import { AddCourseModal } from "@/components/add-course-modal";
-import { courseSchema } from "@/actions/type";
 import z from "zod";
 
 const DAYS = [
@@ -373,20 +365,24 @@ function Step5Courses({
   onBack: () => void;
   onFinish: () => void;
 }) {
-  const [title, setTitle] = React.useState("");
-  const [credits, setCredits] = React.useState(3);
-  const [pageCount, setPageCount] = React.useState(100);
-  const [examDate, setExamDate] = React.useState("");
-  const [color, setColor] = React.useState("#3b82f6");
-  const [milestone1, setMilestone1] = React.useState(0);
-  const [milestone2, setMilestone2] = React.useState(0);
-  const [milestone3, setMilestone3] = React.useState(0);
   const [showAddForm, setShowAddForm] = React.useState(false);
 
   const handleAddCourse = (data: z.infer<typeof courseSchema>) => {
+    const newCourse: LocalCourse = {
+      id: crypto.randomUUID(),
+      title: data.title,
+      credits: data.credits,
+      pageCount: data.pageCount,
+      examDate: data.examDate,
+      color: data.color,
+      milestone1: data.milestone1,
+      milestone2: data.milestone2,
+      milestone3: data.milestone3,
+    };
+
     setLocalCourses((prev) => [
       ...prev,
-      data as LocalCourse, // Type assertion to LocalCourse
+      newCourse, // Type assertion to LocalCourse
     ]);
 
     setShowAddForm(false);
