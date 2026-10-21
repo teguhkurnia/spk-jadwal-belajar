@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { PlusCircleIcon } from "@phosphor-icons/react";
 import { Settings2Icon } from "lucide-react";
 
@@ -27,6 +28,7 @@ export function NavMain({
     icon?: React.ReactNode;
   }[];
 }) {
+  const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
 
   const [isAddLoading, setIsAddLoading] = React.useState(false);
@@ -58,7 +60,7 @@ export function NavMain({
               <Button
                 size="icon"
                 className="size-8 group-data-[collapsible=icon]:opacity-0"
-                variant="outline"
+                variant={pathname.startsWith("/settings") ? "secondary" : "outline"}
                 render={<Link href="/settings" />}
                 nativeButton={false}
               >
@@ -68,17 +70,24 @@ export function NavMain({
             </SidebarMenuItem>
           </SidebarMenu>
           <SidebarMenu>
-            {items.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton
-                  tooltip={item.title}
-                  render={<Link href={item.url} />}
-                >
-                  {item.icon}
-                  <span>{item.title}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+            {items.map((item) => {
+              const isActive =
+                pathname === item.url ||
+                (item.url !== "/" && pathname.startsWith(item.url));
+
+              return (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    tooltip={item.title}
+                    isActive={isActive}
+                    render={<Link href={item.url} />}
+                  >
+                    {item.icon}
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
