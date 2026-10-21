@@ -1,5 +1,5 @@
-import { TODAY } from "@/data";
 import { reschedule } from "@/lib/reschedule";
+import { getCurrentDay } from "@/lib/utils";
 import { createClient } from "@supabase/supabase-js";
 import dayjs from "dayjs";
 import { NextResponse } from "next/server";
@@ -11,8 +11,7 @@ const supabase = createClient(
 
 export async function GET(request: Request) {
   try {
-    // TODO: Implement real time and date handling based on server time and timezone
-    const now = TODAY;
+    const now = getCurrentDay();
     const todayStr = dayjs(now, "Asia/Jakarta").format("YYYY-MM-DD");
 
     // Ubah semua jadwal kemarin yang belum dikerjakan menjadi "Terlewat"

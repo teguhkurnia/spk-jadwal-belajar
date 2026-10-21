@@ -13,8 +13,8 @@ import {
 } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { TODAY } from "@/data";
 import dayjs from "dayjs";
+import { getCurrentDay } from "@/lib/utils";
 
 interface DashboardClientProps {
   initialSemester: any;
@@ -56,7 +56,7 @@ export function DashboardClient({
         return;
       }
 
-      const now = TODAY; // Use the hardcoded date for testing
+      const now = getCurrentDay();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, "0");
       const day = String(now.getDate()).padStart(2, "0");
@@ -275,7 +275,8 @@ export function DashboardClient({
           <div className="flex items-center gap-2 font-semibold text-sm text-primary uppercase tracking-wider">
             <CalendarCheckIcon className="size-5" />
             <span>
-              Fokus Hari Ini ({dayjs(TODAY).format("dddd, DD MMMM YYYY")})
+              Fokus Hari Ini (
+              {dayjs(getCurrentDay()).format("dddd, DD MMMM YYYY")})
             </span>
           </div>
           {todaySchedule && (

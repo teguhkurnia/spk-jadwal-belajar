@@ -15,3 +15,8 @@ export const formatDate = (d: Date) => {
     year: "numeric",
   });
 };
+
+export const getCurrentDay = (): Date => {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+};

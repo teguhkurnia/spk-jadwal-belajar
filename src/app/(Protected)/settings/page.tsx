@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { PreferenceSettingsCard } from "./preference-card";
 import { DangerZoneCard } from "./danger-zone-card";
-import { SpinnerIcon, CheckCircleIcon, WarningIcon } from "@phosphor-icons/react";
+import {
+  SpinnerIcon,
+  CheckCircleIcon,
+  WarningIcon,
+} from "@phosphor-icons/react";
 
 interface NotificationState {
   type: "success" | "warning" | "error";
@@ -52,7 +56,10 @@ export default function SettingsPage() {
     setLoading(false);
   };
 
-  const handleSavePreferences = async (max_study_pages: number, days_of_week: string[]) => {
+  const handleSavePreferences = async (
+    max_study_pages: number,
+    days_of_week: string[],
+  ) => {
     setSaving(true);
     setNotice(null);
 
@@ -135,7 +142,8 @@ export default function SettingsPage() {
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">Pengaturan Jadwal</h1>
         <p className="text-sm text-muted-foreground">
-          Sesuaikan kecepatan belajar harian, hari aktif, serta manajemen semester aktif Anda.
+          Sesuaikan kecepatan belajar harian, hari aktif, serta manajemen
+          semester aktif Anda.
         </p>
       </div>
 
@@ -145,8 +153,8 @@ export default function SettingsPage() {
             notice.type === "success"
               ? "bg-emerald-50 text-emerald-900 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-200 dark:border-emerald-900"
               : notice.type === "warning"
-              ? "bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-900"
-              : "bg-destructive/10 text-destructive border-destructive/20"
+                ? "bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/30 dark:text-amber-200 dark:border-amber-900"
+                : "bg-destructive/10 text-destructive border-destructive/20"
           }`}
         >
           {notice.type === "success" && (
@@ -166,7 +174,15 @@ export default function SettingsPage() {
       <PreferenceSettingsCard
         semesterName={semester?.name}
         initialPages={semester?.max_study_pages ?? 40}
-        initialDays={semester?.days_of_week ?? ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"]}
+        initialDays={
+          semester?.days_of_week ?? [
+            "Senin",
+            "Selasa",
+            "Rabu",
+            "Kamis",
+            "Jumat",
+          ]
+        }
         onSave={handleSavePreferences}
         saving={saving}
       />
@@ -180,4 +196,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-

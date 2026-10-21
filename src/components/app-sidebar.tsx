@@ -57,18 +57,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   React.useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
-      if (authUser) {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
         setUser({
-          name:
-            authUser.user_metadata?.full_name ||
-            authUser.email?.split("@")[0] ||
-            "User",
-          email: authUser.email || "",
-          avatar: authUser.user_metadata?.avatar_url || "/images/avatar.png",
+          name: session.user.user_metadata.full_name || "User",
+          email: session.user.email || "",
+          avatar: session.user.user_metadata.avatar_url || "/images/avatar.png",
         });
       }
     });
+
+    return () => {};
   }, []);
 
   const handleLogout = async () => {
@@ -88,7 +87,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               render={<Link href="#" />}
             >
               <CommandIcon className="size-5!" />
-              <span className="text-base font-semibold">Acme Inc.</span>
+              <span className="text-base font-semibold">
+                SPK Jadwal Belajar
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

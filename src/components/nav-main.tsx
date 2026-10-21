@@ -44,6 +44,8 @@ export function NavMain({
                 size="icon"
                 className="size-8 group-data-[collapsible=icon]:opacity-0"
                 variant="outline"
+                render={<Link href="/settings" />}
+                nativeButton={false}
               >
                 <Settings2Icon />
                 <span className="sr-only">Settings</span>

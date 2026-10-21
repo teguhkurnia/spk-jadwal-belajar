@@ -1,28 +1,12 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { createClient } from "@/utils/supabase/server";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 export default async function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createClient(await cookies());
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session) {
-    return redirect("/login");
-  }
-
-  if (!session.user.app_metadata?.is_onboarding_complete) {
-    return redirect("/onboarding");
-  }
-
   return (
     <SidebarProvider
       style={

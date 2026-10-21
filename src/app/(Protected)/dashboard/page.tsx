@@ -2,25 +2,34 @@ import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 import { DashboardClient } from "./dashboard-client";
 import { getActiveSemester } from "@/lib/semester";
+import { connection } from "next/server";
+import { getMetadata } from "@/data";
 
-export default async function DashboardPage() {
+async function DashboardData() {
+  await connection();
+
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return null;
-  }
+    data: { session },
+  } = await supabase.auth.getSession();
 
   const activeSemester = await getActiveSemester({
     supabase,
-    userId: user.id,
+    userId: session!.user.id,
   });
 
   return (
-    <DashboardClient initialSemester={activeSemester} userEmail={user.email} />
+    <DashboardClient
+      initialSemester={activeSemester}
+      userEmail={session!.user.email}
+    />
   );
+}
+
+export const metadata = getMetadata("/dashboard");
+
+export default function DashboardPage() {
+  return <DashboardData />;
 }

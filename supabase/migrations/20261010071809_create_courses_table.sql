@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS courses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    semester_id UUID REFERENCES semesters(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    semester_id UUID NOT NULL REFERENCES semesters(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     credits INT NOT NULL,
     page_count INT NOT NULL,

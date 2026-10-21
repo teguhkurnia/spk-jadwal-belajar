@@ -1,7 +1,7 @@
-import { TODAY } from "@/data";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { generateFullSchedule } from "./schedule";
 import dayjs from "dayjs";
+import { getCurrentDay } from "./utils";
 
 export const reschedule = async ({
   daysOfWeek,
@@ -14,7 +14,7 @@ export const reschedule = async ({
   daysOfWeek: string[];
   activeSemester: Semester;
 }) => {
-  const now = TODAY;
+  const now = getCurrentDay();
   const todayStr = dayjs(now, "Asia/Jakarta").format("YYYY-MM-DD");
 
   const { data: todaySchedules } = await supabase

@@ -4,7 +4,13 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
-import { PlusIcon, DotsThreeIcon, PencilIcon, TrashIcon, BookOpenIcon } from "@phosphor-icons/react";
+import {
+  PlusIcon,
+  DotsThreeIcon,
+  PencilIcon,
+  TrashIcon,
+  BookOpenIcon,
+} from "@phosphor-icons/react";
 import { CalendarIcon } from "lucide-react";
 import { deleteCourse } from "@/actions/course";
 import { AddCourseModal } from "@/components/add-course-modal";
@@ -16,17 +22,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export function CoursesClient({ initialCourses }: { initialCourses: Course[] }) {
+export function CoursesClient({
+  initialCourses,
+}: {
+  initialCourses: Course[];
+}) {
   const router = useRouter();
   const [courses, setCourses] = React.useState<Course[]>(initialCourses);
   const [isAddOpen, setIsAddOpen] = React.useState(false);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
-  const [selectedCourse, setSelectedCourse] = React.useState<Course | null>(null);
+  const [selectedCourse, setSelectedCourse] = React.useState<Course | null>(
+    null,
+  );
   const [loadingId, setLoadingId] = React.useState<string | null>(null);
 
   const fetchCourses = async () => {
     const supabase = createClient();
-    const { data } = await supabase.from("courses").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase
+      .from("courses")
+      .select("*")
+      .order("created_at", { ascending: false });
     if (data) setCourses(data);
   };
 
@@ -36,9 +51,7 @@ export function CoursesClient({ initialCourses }: { initialCourses: Course[] }) 
     const result = await deleteCourse(id);
     if (result.success) {
       setCourses((prev) => prev.filter((c) => c.id !== id));
-      router.refresh();
     } else if (result.error) {
-      // optional: show error toast
       console.error(result.error);
     }
     setLoadingId(null);
@@ -48,9 +61,12 @@ export function CoursesClient({ initialCourses }: { initialCourses: Course[] }) 
     <div className="flex flex-col gap-6 p-4 md:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Manajemen Mata Kuliah</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Manajemen Mata Kuliah
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Kelola daftar mata kuliah, SKS, jumlah halaman modul, dan tanggal ujian KTPU Anda.
+            Kelola daftar mata kuliah, SKS, jumlah halaman modul, dan tanggal
+            ujian KTPU Anda.
           </p>
         </div>
         <Button onClick={() => setIsAddOpen(true)} className="gap-2">
@@ -66,7 +82,8 @@ export function CoursesClient({ initialCourses }: { initialCourses: Course[] }) 
           </div>
           <h3 className="text-lg font-semibold">Belum ada mata kuliah</h3>
           <p className="text-sm text-muted-foreground max-w-sm mt-1 mb-6">
-            Mulai dengan menambahkan mata kuliah pertama Anda untuk menyusun jadwal belajar SPK.
+            Mulai dengan menambahkan mata kuliah pertama Anda untuk menyusun
+            jadwal belajar SPK.
           </p>
           <Button onClick={() => setIsAddOpen(true)} className="gap-2">
             <PlusIcon className="size-4" />
@@ -76,9 +93,15 @@ export function CoursesClient({ initialCourses }: { initialCourses: Course[] }) 
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {courses.map((course) => {
-            const progress = course.page_count > 0 
-              ? Math.min(100, Math.round(((course.completed_pages || 0) / course.page_count) * 100))
-              : 0;
+            const progress =
+              course.page_count > 0
+                ? Math.min(
+                    100,
+                    Math.round(
+                      ((course.completed_pages || 0) / course.page_count) * 100,
+                    ),
+                  )
+                : 0;
 
             return (
               <div
@@ -124,7 +147,9 @@ export function CoursesClient({ initialCourses }: { initialCourses: Course[] }) 
                       className="size-3.5 rounded-full shrink-0"
                       style={{ backgroundColor: course.color || "#3b82f6" }}
                     />
-                    <h3 className="font-semibold text-base leading-snug pr-8">{course.title}</h3>
+                    <h3 className="font-semibold text-base leading-snug pr-8">
+                      {course.title}
+                    </h3>
                   </div>
 
                   <div className="flex flex-wrap gap-2 text-xs font-medium">
@@ -138,14 +163,26 @@ export function CoursesClient({ initialCourses }: { initialCourses: Course[] }) 
 
                   <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
                     <CalendarIcon className="size-4 shrink-0" />
-                    <span>Ujian: {new Date(course.exam_date).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</span>
+                    <span>
+                      Ujian:{" "}
+                      {new Date(course.exam_date).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </span>
                   </div>
                 </div>
 
                 <div className="mt-6 pt-4 border-t space-y-2">
                   <div className="flex justify-between text-xs font-medium">
-                    <span className="text-muted-foreground">Progress Selesai</span>
-                    <span>{progress}% ({course.completed_pages || 0}/{course.page_count} hal)</span>
+                    <span className="text-muted-foreground">
+                      Progress Selesai
+                    </span>
+                    <span>
+                      {progress}% ({course.completed_pages || 0}/
+                      {course.page_count} hal)
+                    </span>
                   </div>
                   <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
                     <div

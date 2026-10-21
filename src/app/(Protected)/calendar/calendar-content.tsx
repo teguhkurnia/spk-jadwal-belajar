@@ -15,13 +15,8 @@ import {
   TableHead,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { TODAY } from "@/data";
 import { ScheduleDayItem } from "@/lib/schedule";
+import { getCurrentDay } from "@/lib/utils";
 import {
   EventClickInfo,
   EventDisplayInfo,
@@ -29,9 +24,8 @@ import {
 } from "@fullcalendar/react";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import { cn } from "cn";
-import { CheckCircle2Icon } from "lucide-react";
+import { CheckCircle2Icon, ClockIcon } from "lucide-react";
 import { useState } from "react";
-
 interface Props {
   initialEvents: EventSourceInput;
 }
@@ -39,8 +33,10 @@ interface Props {
 function renderEventContent(eventInfo: EventDisplayInfo) {
   if (eventInfo.event.extendedProps.type !== "study") {
     return (
-      <div className="flex flex-col p-2.5">
-        <p className="text-sm font-semibold">{eventInfo.event.title}</p>
+      <div className="flex flex-col p-1 sm:p-2.5 min-w-0 overflow-hidden leading-tight">
+        <p className="text-xs sm:text-sm font-semibold truncate">
+          {eventInfo.event.title}
+        </p>
       </div>
     );
   }
@@ -48,27 +44,44 @@ function renderEventContent(eventInfo: EventDisplayInfo) {
   const extendedProps = eventInfo.event
     .extendedProps as DailyScheduleWithRelations;
   return (
-    <div className="flex flex-col p-2.5 gap-1">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold">{extendedProps.course.title}</p>
+    <div className="flex flex-col p-1 sm:p-2.5 gap-0.5 sm:gap-1 min-w-0 overflow-hidden leading-tight">
+      <div className="flex items-center justify-between min-w-0">
+        <p className="text-xs sm:text-sm font-semibold truncate">
+          {extendedProps.status === "completed" ? (
+            <s>{extendedProps.course.title}</s>
+          ) : (
+            extendedProps.course.title
+          )}
+        </p>
       </div>
-      <p className="text-xs">Target: {extendedProps.target_pages} Halaman</p>
-      <Badge variant="secondary" className="mt-1 w-fit text-xs">
-        {extendedProps.milestone.title}
+      <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+        Target: {extendedProps.target_pages} Hlm
+      </p>
+      <Badge
+        variant="secondary"
+        className="mt-0.5 sm:mt-1 w-fit max-w-full text-[10px] sm:text-xs px-1 sm:px-2 py-0 truncate font-normal"
+      >
+        <span className="truncate">{extendedProps.milestone.title}</span>
       </Badge>
 
-      <div className="mt-2">
+      <div className="mt-1 sm:mt-2 flex flex-wrap gap-1">
         {extendedProps.status === "completed" && (
-          <Badge variant="default" className="mt-1 w-fit gap-1 text-xs">
-            <CheckCircle2Icon className="size-8" />
-            Selesai
+          <Badge
+            variant="default"
+            className="w-fit gap-1 text-[10px] sm:text-xs px-1 sm:px-2 py-0"
+          >
+            <CheckCircle2Icon className="size-3 sm:size-3.5 shrink-0" />
+            <span>Selesai</span>
           </Badge>
         )}
 
         {extendedProps.status === "overdue" && (
-          <Badge variant="destructive" className="mt-1 w-fit gap-1 text-xs">
-            <WarningCircleIcon className="size-8" />
-            Terlambat
+          <Badge
+            variant="destructive"
+            className="w-fit gap-1 text-[10px] sm:text-xs px-1 sm:px-2 py-0"
+          >
+            <ClockIcon className="size-3 sm:size-3.5 shrink-0" />
+            <span>Terlambat</span>
           </Badge>
         )}
 
@@ -76,12 +89,12 @@ function renderEventContent(eventInfo: EventDisplayInfo) {
           <Badge
             variant="default"
             className={cn(
-              "mt-1 w-fit gap-1 text-xs",
+              "w-fit gap-1 text-[10px] sm:text-xs px-1 sm:px-2 py-0",
               "bg-yellow-500 text-black hover:bg-yellow-600 focus:ring-yellow-500",
             )}
           >
-            <WarningCircleIcon className="size-8" />
-            Overload
+            <WarningCircleIcon className="size-3 sm:size-3.5 shrink-0" />
+            <span>Overload</span>
           </Badge>
         )}
       </div>
@@ -176,9 +189,9 @@ export default function CalendarContent({ initialEvents }: Props) {
   };
 
   return (
-    <div className="p-4 lg:p-6">
+    <div className="p-4 lg:p-6 h-full fc-responsive-wrapper">
       <EventCalendar
-        now={TODAY}
+        now={getCurrentDay()}
         showNonCurrentDates={false}
         availableViews={["dayGridMonth", "timeGridWeek", "listWeek"]}
         // addButton={{
@@ -187,6 +200,9 @@ export default function CalendarContent({ initialEvents }: Props) {
         //     alert("add event...");
         //   },
         // }}
+        expandRows
+        height="100%"
+        locale="id"
         editable
         selectable
         events={events}

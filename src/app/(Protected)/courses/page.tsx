@@ -2,8 +2,13 @@ import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { CoursesClient } from "./courses-client";
+import { connection } from "next/server";
+import { getMetadata } from "@/data";
+
+export const metadata = getMetadata("/courses");
 
 async function CoursesData() {
+  await connection();
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
@@ -22,4 +27,3 @@ export default function CoursesPage() {
     </Suspense>
   );
 }
-
