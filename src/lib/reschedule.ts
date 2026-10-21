@@ -25,6 +25,10 @@ export const reschedule = async ({
 
   let startGenerationDate = todayStr;
 
+  if (dayjs(now).isBefore(dayjs(activeSemester.start_study_date))) {
+    startGenerationDate = activeSemester.start_study_date;
+  }
+
   if (todaySchedules && todaySchedules.length > 0) {
     // Jika statusnya BUKAN pending, berarti sudah dikerjakan / terlewat
     const isTodayUsed = todaySchedules.some(
