@@ -12,6 +12,7 @@ import { Slider } from "@/components/ui/slider";
 import { milestone } from "@/lib/utils";
 import { createClient } from "@/utils/supabase/client";
 import { BookOpenIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import dayjs from "dayjs";
 import { CalendarIcon } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
@@ -64,6 +65,7 @@ interface LocalCourse {
   milestone1: number;
   milestone2: number;
   milestone3: number;
+  readPages: number;
 }
 
 export default function OnboardingPageClient() {
@@ -80,6 +82,11 @@ export default function OnboardingPageClient() {
   const [kmaks, setKmaks] = React.useState(30);
   const [days, setDays] = React.useState<string[]>(DAYS.map((d) => d.id));
   const [tutonDate, setTutonDate] = React.useState("");
+
+  const isTutonPassed = React.useMemo(() => {
+    if (!tutonDate) return false;
+    return dayjs().startOf("day").isAfter(dayjs(tutonDate).startOf("day"));
+  }, [tutonDate]);
 
   // Step 5: local courses
   const [localCourses, setLocalCourses] = React.useState<LocalCourse[]>([]);
@@ -102,7 +109,10 @@ export default function OnboardingPageClient() {
         startTutonDate: tutonDate,
         kmax: kmaks,
         daysOfWeek: days,
-        courses: localCourses.map(({ id: _, ...course }) => course),
+        courses: localCourses.map(({ id: _, ...course }) => ({
+          ...course,
+          readPages: course.readPages ?? 0,
+        })),
       });
 
       if (res?.error) {
@@ -334,6 +344,7 @@ export default function OnboardingPageClient() {
                     localCourses={localCourses}
                     setLocalCourses={setLocalCourses}
                     tutonDate={tutonDate}
+                    isTutonPassed={isTutonPassed}
                     loading={loading}
                     onBack={() => goToStep(4)}
                     onFinish={onFinish}
@@ -354,6 +365,7 @@ function Step5Courses({
   localCourses,
   setLocalCourses,
   tutonDate,
+  isTutonPassed,
   loading,
   onBack,
   onFinish,
@@ -361,6 +373,7 @@ function Step5Courses({
   localCourses: LocalCourse[];
   setLocalCourses: React.Dispatch<React.SetStateAction<LocalCourse[]>>;
   tutonDate: string;
+  isTutonPassed: boolean;
   loading: boolean;
   onBack: () => void;
   onFinish: () => void;
@@ -378,6 +391,7 @@ function Step5Courses({
       milestone1: data.milestone1,
       milestone2: data.milestone2,
       milestone3: data.milestone3,
+      readPages: data.readPages ?? 0,
     };
 
     setLocalCourses((prev) => [
@@ -411,10 +425,30 @@ function Step5Courses({
         </Button>
       </div>
 
+      {isTutonPassed && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20 p-4 text-sm text-amber-900 dark:text-amber-200">
+          <p className="font-medium">
+            Tanggal mulai Tuton telah terlewat (
+            {new Date(tutonDate).toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+            )
+          </p>
+          <p className="text-xs mt-1 text-amber-800 dark:text-amber-300">
+            Berapa halaman modul yang sudah Anda baca di setiap mata kuliah?
+            Masukkan jumlah halaman yang sudah dibaca agar sistem menyimpan
+            snapshot progres dan menjadwalkan sisa halaman dengan tepat.
+          </p>
+        </div>
+      )}
+
       <AddCourseModal
         onOpenChange={setShowAddForm}
         open={showAddForm}
         isLoading={loading}
+        isTutonPassed={isTutonPassed}
         onSave={handleAddCourse}
       />
 
@@ -490,6 +524,41 @@ function Step5Courses({
                     })}
                   </span>
                 </div>
+
+                {isTutonPassed && (
+                  <div className="pt-3 border-t flex items-center justify-between gap-3">
+                    <Label
+                      htmlFor={`read-pages-${course.id}`}
+                      className="text-xs text-muted-foreground whitespace-nowrap"
+                    >
+                      Sudah dibaca:
+                    </Label>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        id={`read-pages-${course.id}`}
+                        type="number"
+                        min={0}
+                        max={course.pageCount}
+                        value={course.readPages}
+                        onChange={(e) => {
+                          const val = Math.min(
+                            course.pageCount,
+                            Math.max(0, Number(e.target.value) || 0),
+                          );
+                          setLocalCourses((prev) =>
+                            prev.map((c) =>
+                              c.id === course.id ? { ...c, readPages: val } : c,
+                            ),
+                          );
+                        }}
+                        className="h-8 w-20 text-xs text-right"
+                      />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        / {course.pageCount} hlm
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}

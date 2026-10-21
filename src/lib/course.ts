@@ -69,18 +69,27 @@ export async function addCourses(
       continue; // Skip if no milestones to insert
     }
 
+    let remainingRead = course.readPages ?? 0;
+
     const { error: milestoneError } = await supabase.from("milestones").insert(
       milestones.map(
-        (m): Database["public"]["Tables"]["milestones"]["Insert"] => ({
-          user_id: userId,
-          course_id: courseData.id,
-          readed_pages: 0,
-          status: "pending",
-          title: m.title,
-          target_pages: m.target_pages,
-          deadline: m.deadline!,
-          semester_id: semesterId,
-        }),
+        (m): Database["public"]["Tables"]["milestones"]["Insert"] => {
+          const readedForMilestone = Math.min(remainingRead, m.target_pages);
+          remainingRead = Math.max(0, remainingRead - readedForMilestone);
+          const isCompleted =
+            m.target_pages > 0 && readedForMilestone >= m.target_pages;
+
+          return {
+            user_id: userId,
+            course_id: courseData.id,
+            readed_pages: readedForMilestone,
+            status: isCompleted ? "completed" : "pending",
+            title: m.title,
+            target_pages: m.target_pages,
+            deadline: m.deadline!,
+            semester_id: semesterId,
+          };
+        },
       ),
     );
 

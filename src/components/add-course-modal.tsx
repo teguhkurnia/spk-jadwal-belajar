@@ -32,6 +32,7 @@ interface AddCourseModalProps {
   onOpenChange: (open: boolean) => void;
   onSave: (data: z.infer<typeof courseSchema>) => void;
   isLoading?: boolean;
+  isTutonPassed?: boolean;
 }
 
 export function AddCourseModal({
@@ -39,8 +40,10 @@ export function AddCourseModal({
   onOpenChange,
   onSave,
   isLoading,
+  isTutonPassed,
 }: AddCourseModalProps) {
   const [selectedColor, setSelectedColor] = React.useState("#3b82f6");
+  const [currentPageCount, setCurrentPageCount] = React.useState(100);
   const [milestones, setMilestones] = React.useState({
     milestone1: 0,
     milestone2: 0,
@@ -62,6 +65,9 @@ export function AddCourseModal({
       milestone1: Number(formData.get("milestone1")),
       milestone2: Number(formData.get("milestone2")),
       milestone3: Number(formData.get("milestone3")),
+      readPages: formData.get("readPages")
+        ? Number(formData.get("readPages"))
+        : 0,
     };
 
     onSave(data);
@@ -71,6 +77,7 @@ export function AddCourseModal({
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const pageCount = Number(event.target.value);
+    setCurrentPageCount(pageCount);
 
     // Generate milstone predictions based on the page count
     // with ratio 6:5:4
@@ -103,14 +110,18 @@ export function AddCourseModal({
       }}
     >
       <DialogContent className="sm:max-w-md">
-        <form ref={formRef} onSubmit={onSubmit} className="space-y-4">
-          <DialogHeader>
-            <DialogTitle>Tambah Mata Kuliah Baru</DialogTitle>
-            <DialogDescription>
-              Isi rincian mata kuliah untuk dimasukkan ke jadwal belajar.
-            </DialogDescription>
-          </DialogHeader>
-
+        <DialogHeader>
+          <DialogTitle>Tambah Mata Kuliah Baru</DialogTitle>
+          <DialogDescription>
+            Isi rincian mata kuliah untuk dimasukkan ke jadwal belajar.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          id="add-course-form"
+          ref={formRef}
+          onSubmit={onSubmit}
+          className="space-y-4 overflow-y-auto max-h-[60vh]"
+        >
           <Field>
             <FieldLabel htmlFor="course-title">
               Nama / Judul Mata Kuliah
@@ -165,11 +176,34 @@ export function AddCourseModal({
             </FieldContent>
           </Field>
 
+          {isTutonPassed && (
+            <Field>
+              <FieldLabel htmlFor="course-read-pages">
+                Halaman yang Sudah Dibaca
+              </FieldLabel>
+              <FieldContent>
+                <Input
+                  id="course-read-pages"
+                  name="readPages"
+                  type="number"
+                  min={0}
+                  max={currentPageCount}
+                  defaultValue={0}
+                  placeholder="0"
+                />
+              </FieldContent>
+              <p className="text-xs text-muted-foreground mt-1">
+                Tanggal Tuton telah terlewat. Masukkan jumlah halaman yang sudah
+                Anda selesaikan.
+              </p>
+            </Field>
+          )}
+
           <input type="hidden" name="color" value={selectedColor} />
 
           <Field>
             <FieldLabel>Warna Label</FieldLabel>
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-2 pt-1 pl-2">
               {COLOR_PRESETS.map((preset) => (
                 <button
                   key={preset}
@@ -238,20 +272,19 @@ export function AddCourseModal({
               </div>
             </div>
           </Field>
-
-          <DialogFooter className="pt-2">
-            <DialogClose
-              render={
-                <Button type="button" variant="outline" disabled={isLoading}>
-                  Batal
-                </Button>
-              }
-            />
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Menyimpan..." : "Tambah"}
-            </Button>
-          </DialogFooter>
         </form>
+        <DialogFooter className="pt-2">
+          <DialogClose
+            render={
+              <Button type="button" variant="outline" disabled={isLoading}>
+                Batal
+              </Button>
+            }
+          />
+          <Button type="submit" disabled={isLoading} form="add-course-form">
+            {isLoading ? "Menyimpan..." : "Tambah"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

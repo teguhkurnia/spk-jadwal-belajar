@@ -9,4 +9,6 @@ export const courseSchema = z.object({
   milestone1: z.number().int().min(0),
   milestone2: z.number().int().min(0),
   milestone3: z.number().int().min(0),
+  readPages: z.number().int().min(0).optional().default(0),
 });
+
