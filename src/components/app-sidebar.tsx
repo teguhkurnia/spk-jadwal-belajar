@@ -2,7 +2,6 @@
 
 import * as React from "react";
 
-import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
@@ -15,32 +14,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import {
-  SquaresFourIcon,
-  ListIcon,
-  ChartBarIcon,
-  FolderIcon,
-  UsersIcon,
-  CameraIcon,
-  FileTextIcon,
-  GearIcon,
-  QuestionIcon,
-  MagnifyingGlassIcon,
-  DatabaseIcon,
-  ChartLineIcon,
-  FileIcon,
-  CommandIcon,
-} from "@phosphor-icons/react";
-import { BookOpenIcon } from "lucide-react";
-import { CalendarIcon } from "lucide-react";
+import { CommandIcon, GearIcon, SquaresFourIcon } from "@phosphor-icons/react";
+import { BookOpenIcon, CalendarIcon } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
       title: "Dashboard",
@@ -57,11 +37,6 @@ const data = {
       url: "/calendar",
       icon: <CalendarIcon />,
     },
-    {
-      title: "Onboarding",
-      url: "/onboarding",
-      icon: <FileTextIcon />,
-    },
   ],
   navSecondary: [
     {
@@ -71,7 +46,38 @@ const data = {
     },
   ],
 };
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const router = useRouter();
+  const [user, setUser] = React.useState({
+    name: "User",
+    email: "",
+    avatar: "/images/avatar.png",
+  });
+
+  React.useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
+      if (authUser) {
+        setUser({
+          name:
+            authUser.user_metadata?.full_name ||
+            authUser.email?.split("@")[0] ||
+            "User",
+          email: authUser.email || "",
+          avatar: authUser.user_metadata?.avatar_url || "/images/avatar.png",
+        });
+      }
+    });
+  }, []);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.replace("/login");
+    router.refresh();
+  };
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -92,7 +98,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} onLogout={handleLogout} />
       </SidebarFooter>
     </Sidebar>
   );

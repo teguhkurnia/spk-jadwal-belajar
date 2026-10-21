@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS semesters (
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     
     name VARCHAR(50) NOT NULL, 
-    is_active BOOLEAN DEFAULT false,    
+    is_active BOOLEAN NOT NULL DEFAULT false,    
     
     max_study_pages INT NOT NULL DEFAULT 40,
     days_of_week JSONB NOT NULL DEFAULT '["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]',

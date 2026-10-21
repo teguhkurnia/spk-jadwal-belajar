@@ -1,7 +1,7 @@
 declare interface Semester {
   id: string;
   user_id: string;
-  nama_semester: string;
+  name: string;
   is_active: boolean;
   max_study_pages: number;
   days_of_week: string[]; // ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]

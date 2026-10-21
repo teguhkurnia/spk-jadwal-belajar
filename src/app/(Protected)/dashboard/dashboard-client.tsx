@@ -13,6 +13,8 @@ import {
 } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { TODAY } from "@/data";
+import dayjs from "dayjs";
 
 interface DashboardClientProps {
   initialSemester: any;
@@ -32,6 +34,7 @@ export function DashboardClient({
   const [hasCritical, setHasCritical] = React.useState(false);
   const [coursesProgress, setCoursesProgress] = React.useState<any[]>([]);
   const [nextThreeDays, setNextThreeDays] = React.useState<any[]>([]);
+
   const fetchDashboardData = async () => {
     setLoading(true);
     const supabase = createClient();
@@ -53,7 +56,7 @@ export function DashboardClient({
         return;
       }
 
-      const now = new Date();
+      const now = TODAY; // Use the hardcoded date for testing
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, "0");
       const day = String(now.getDate()).padStart(2, "0");
@@ -272,14 +275,7 @@ export function DashboardClient({
           <div className="flex items-center gap-2 font-semibold text-sm text-primary uppercase tracking-wider">
             <CalendarCheckIcon className="size-5" />
             <span>
-              Fokus Hari Ini (
-              {new Date().toLocaleDateString("id-ID", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-              )
+              Fokus Hari Ini ({dayjs(TODAY).format("dddd, DD MMMM YYYY")})
             </span>
           </div>
           {todaySchedule && (
@@ -291,8 +287,8 @@ export function DashboardClient({
               }`}
             >
               {todaySchedule.status === "completed"
-                ? "✅ Selesai Hari Ini"
-                : "⏳ Sedang Berjalan"}
+                ? "Selesai Hari Ini"
+                : "Sedang Berjalan"}
             </span>
           )}
         </div>
@@ -300,35 +296,16 @@ export function DashboardClient({
         {todaySchedule ? (
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="space-y-3 max-w-2xl">
-              <div className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground bg-muted/60 px-3 py-1 rounded-md">
-                <span
-                  className="size-2 rounded-full"
-                  style={{
-                    backgroundColor: todaySchedule.course?.color || "#3b82f6",
-                  }}
-                />
-                <span>
-                  🎯 Mengejar:{" "}
-                  {todaySchedule.milestone?.title || "Milestone Aktif"}
-                </span>
-              </div>
               <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
                 {todaySchedule.course?.title || "Mata Kuliah PJJ"}
               </h2>
               <p className="text-base text-muted-foreground">
-                Baca Halaman{" "}
-                <strong className="text-foreground">
-                  {todaySchedule.from_page || 1}
-                </strong>{" "}
-                sampai{" "}
-                <strong className="text-foreground">
-                  {todaySchedule.to_page || todaySchedule.target_pages}
-                </strong>{" "}
-                (Total:{" "}
-                <strong className="text-primary font-semibold">
-                  {todaySchedule.target_pages} hal
-                </strong>
-                ).
+                Baca
+                <span className="font-semibold text-primary">
+                  {" "}
+                  {todaySchedule.target_pages}{" "}
+                </span>
+                Halaman
               </p>
             </div>
 
@@ -347,7 +324,7 @@ export function DashboardClient({
                 >
                   <CheckCircleIcon className="size-5" />
                   <span>
-                    {completing ? "Menyimpan..." : "✅ Tandai Selesai"}
+                    {completing ? "Menyimpan..." : "  Tandai Selesai"}
                   </span>
                 </Button>
               )}
@@ -376,14 +353,17 @@ export function DashboardClient({
                 Milestone Aktif
               </h3>
               <Button
-                render={<Link href="/courses" className="gap-1" />}
+                render={
+                  <Link href="/courses" className="gap-1">
+                    <span>Lihat Semua</span>
+                    <ArrowRightIcon className="size-3.5" />
+                  </Link>
+                }
                 variant="ghost"
                 size="sm"
                 className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                <span>Lihat Semua</span>
-                <ArrowRightIcon className="size-3.5" />
-              </Button>
+                nativeButton={false}
+              />
             </div>
 
             {coursesProgress.length === 0 ? (
@@ -391,7 +371,11 @@ export function DashboardClient({
                 <p className="text-sm text-muted-foreground mb-3">
                   Belum ada mata kuliah terdaftar di semester ini.
                 </p>
-                <Button size="sm" render={<Link href="/courses" />}>
+                <Button
+                  size="sm"
+                  nativeButton={false}
+                  render={<Link href="/courses" />}
+                >
                   Tambah Mata Kuliah
                 </Button>
               </div>
@@ -449,6 +433,7 @@ export function DashboardClient({
                 variant="ghost"
                 size="sm"
                 className="text-xs text-muted-foreground hover:text-foreground"
+                nativeButton={false}
               >
                 <span>Kalender</span>
                 <ArrowRightIcon className="size-3.5" />
@@ -464,13 +449,8 @@ export function DashboardClient({
             ) : (
               <div className="space-y-3">
                 {nextThreeDays.map((item: any, idx: number) => {
-                  const dateFormatted = new Date(item.date).toLocaleDateString(
-                    "id-ID",
-                    {
-                      weekday: "short",
-                      day: "numeric",
-                      month: "short",
-                    },
+                  const dateFormatted = dayjs(item.date).format(
+                    "ddd, DD MMM YYYY",
                   );
 
                   return (

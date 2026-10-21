@@ -7,7 +7,11 @@ CREATE TABLE IF NOT EXISTS daily_schedules (
     course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     milestone_id UUID REFERENCES milestones(id) ON DELETE SET NULL,
     date DATE NOT NULL,
+    title TEXT NOT NULL,
     target_pages INT NOT NULL,
+    from_page INT NOT NULL,
+    to_page INT NOT NULL,
+    is_overload BOOLEAN NOT NULL DEFAULT FALSE,
     status daily_schedule_status NOT NULL DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

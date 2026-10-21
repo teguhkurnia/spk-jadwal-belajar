@@ -1,9 +1,9 @@
-import { Suspense } from "react";
-import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { cookies } from "next/headers";
 import { DashboardClient } from "./dashboard-client";
+import { getActiveSemester } from "@/lib/semester";
 
-async function DashboardData() {
+export default async function DashboardPage() {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
@@ -15,22 +15,12 @@ async function DashboardData() {
     return null;
   }
 
-  // 1. Ambil Semester Aktif
-  const { data: activeSemester } = await supabase
-    .from("semesters")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("is_active", true)
-    .single();
+  const activeSemester = await getActiveSemester({
+    supabase,
+    userId: user.id,
+  });
 
-  return <DashboardClient initialSemester={activeSemester} userEmail={user.email} />;
-}
-
-export default function DashboardPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-muted-foreground">Memuat Dashboard...</div>}>
-      <DashboardData />
-    </Suspense>
+    <DashboardClient initialSemester={activeSemester} userEmail={user.email} />
   );
 }
-

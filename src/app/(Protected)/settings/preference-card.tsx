@@ -4,7 +4,14 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { SpinnerIcon } from "@phosphor-icons/react";
@@ -39,7 +46,7 @@ export function PreferenceSettingsCard({
 
   const toggleDay = (id: string) => {
     setActiveDays((prev) =>
-      prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id],
     );
   };
 
@@ -55,14 +62,20 @@ export function PreferenceSettingsCard({
         <CardHeader>
           <CardTitle>Pengaturan Kecepatan & Waktu Belajar</CardTitle>
           <CardDescription>
-            Menyesuaikan parameter Sistem Pendukung Keputusan (SPK) untuk semester aktif:{" "}
-            <span className="font-semibold text-foreground">{semesterName}</span>
+            Menyesuaikan parameter Sistem Pendukung Keputusan (SPK) untuk
+            semester aktif:{" "}
+            <span className="font-semibold text-foreground">
+              {semesterName}
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="max_study_pages">
-              Kapasitas Baca Harian (Halaman) <span className="text-muted-foreground font-normal">(K_maks)</span>
+              Kapasitas Baca Harian (Halaman){" "}
+              <span className="text-muted-foreground font-normal">
+                (K_maks)
+              </span>
             </Label>
             <Input
               id="max_study_pages"
@@ -86,9 +99,9 @@ export function PreferenceSettingsCard({
               {DAYS_LIST.map((day) => {
                 const isChecked = activeDays.includes(day.id);
                 return (
-                  <div
+                  <Label
                     key={day.id}
-                    onClick={() => toggleDay(day.id)}
+                    htmlFor={`day-${day.id}`}
                     className={`flex items-center space-x-2 border rounded-lg p-3 cursor-pointer transition-colors ${
                       isChecked
                         ? "border-primary bg-primary/5 text-primary font-medium"
@@ -100,22 +113,26 @@ export function PreferenceSettingsCard({
                       checked={isChecked}
                       onCheckedChange={() => toggleDay(day.id)}
                     />
-                    <label htmlFor={`day-${day.id}`} className="text-sm cursor-pointer select-none">
+                    <span className="text-sm cursor-pointer select-none">
                       {day.label}
-                    </label>
-                  </div>
+                    </span>
+                  </Label>
                 );
               })}
             </div>
             {activeDays.length === 0 && (
-              <p className="text-xs text-destructive">Pilih minimal 1 hari aktif belajar.</p>
+              <p className="text-xs text-destructive">
+                Pilih minimal 1 hari aktif belajar.
+              </p>
             )}
           </div>
         </CardContent>
         <CardFooter className="flex justify-end border-t bg-muted/20 px-6 py-4">
           <Button type="submit" disabled={saving || activeDays.length === 0}>
             {saving && <SpinnerIcon className="mr-2 size-4 animate-spin" />}
-            {saving ? "Sedang menyusun ulang kalender belajar Anda..." : "Simpan Perubahan Jadwal"}
+            {saving
+              ? "Sedang menyusun ulang kalender belajar Anda..."
+              : "Simpan Perubahan Jadwal"}
           </Button>
         </CardFooter>
       </form>

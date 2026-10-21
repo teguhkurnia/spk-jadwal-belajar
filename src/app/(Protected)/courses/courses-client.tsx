@@ -6,6 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PlusIcon, DotsThreeIcon, PencilIcon, TrashIcon, BookOpenIcon } from "@phosphor-icons/react";
 import { CalendarIcon } from "lucide-react";
+import { deleteCourse } from "@/actions/course";
 import { AddCourseModal } from "@/components/add-course-modal";
 import { EditCourseModal } from "@/components/edit-course-modal";
 import {
@@ -32,11 +33,13 @@ export function CoursesClient({ initialCourses }: { initialCourses: Course[] }) 
   const handleDelete = async (id: string) => {
     if (!confirm("Apakah Anda yakin ingin menghapus mata kuliah ini?")) return;
     setLoadingId(id);
-    const supabase = createClient();
-    const { error } = await supabase.from("courses").delete().eq("id", id);
-    if (!error) {
+    const result = await deleteCourse(id);
+    if (result.success) {
       setCourses((prev) => prev.filter((c) => c.id !== id));
       router.refresh();
+    } else if (result.error) {
+      // optional: show error toast
+      console.error(result.error);
     }
     setLoadingId(null);
   };
