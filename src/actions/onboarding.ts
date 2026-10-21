@@ -1,12 +1,11 @@
 "use server";
 
-import z from "zod";
+import { addCourses } from "@/lib/course";
+import { reschedule } from "@/lib/reschedule";
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
-import { milestone } from "@/lib/utils";
-import { reschedule } from "@/lib/reschedule";
+import z from "zod";
 import { courseSchema } from "./type";
-import { Database } from "@/types/database.types";
 
 const saveOnboardingDataSchema = z.object({
   semesterName: z.string().min(1, "Nama semester wajib diisi."),
@@ -56,73 +55,13 @@ export async function saveOnboardingData(
     }
 
     // insert courses
-    const tutonDate = values.startTutonDate;
-    for (const course of values.courses) {
-      const { error: courseError, data: courseData } = await supabase
-        .from("courses")
-        .insert({
-          user_id: userId,
-          semester_id: semesterData.id,
-          title: course.title,
-          credits: course.credits,
-          page_count: course.pageCount,
-          exam_date: course.examDate,
-          color: course.color,
-        })
-        .select("id")
-        .single();
-
-      if (courseError) {
-        console.error("Error inserting course:", courseError);
-        return { error: "Terjadi kesalahan saat menyimpan data mata kuliah." };
-      }
-
-      // insert milestones
-      const milestoneRows = [
-        {
-          title: "Tuton 1",
-          target_pages: course.milestone1,
-          deadline: milestone(tutonDate, 3),
-        },
-        {
-          title: "Tuton 2",
-          target_pages: course.milestone2,
-          deadline: milestone(tutonDate, 5),
-        },
-        {
-          title: "Tuton 3",
-          target_pages: course.milestone3,
-          deadline: milestone(tutonDate, 7),
-        },
-      ].filter((m) => m.target_pages > 0);
-
-      if (milestoneRows.length <= 0) {
-        continue; // Skip if no milestones to insert
-      }
-      const { error: milestoneError } = await supabase
-        .from("milestones")
-        .insert(
-          milestoneRows.map(
-            (m): Database["public"]["Tables"]["milestones"]["Insert"] => ({
-              user_id: userId,
-              course_id: courseData.id,
-              readed_pages: 0,
-              status: "pending",
-              title: m.title,
-              target_pages: m.target_pages,
-              deadline: m.deadline!,
-              semester_id: semesterData.id,
-            }),
-          ),
-        );
-
-      if (milestoneError) {
-        console.error("Error inserting milestones:", milestoneError);
-        return { error: "Terjadi kesalahan saat menyimpan data milestone." };
-      }
-    }
-
-    console.log("semesterData:", semesterData);
+    await addCourses(
+      supabase,
+      userId,
+      semesterData.id,
+      values.startTutonDate,
+      values.courses,
+    );
 
     // Reschedule daily schedules after adding new courses and their milestones
     await reschedule({

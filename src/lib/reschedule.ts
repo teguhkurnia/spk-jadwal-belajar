@@ -57,7 +57,12 @@ export const reschedule = async ({
     .select("*, milestones(*)")
     .eq("semester_id", activeSemester.id);
 
-  if (coursesError || !coursesData || coursesData.length === 0) {
+  if (coursesData?.length === 0) {
+    // Jika tidak ada mata kuliah, tidak perlu generate jadwal
+    return { schedule: [] };
+  }
+
+  if (coursesError || !coursesData) {
     throw new Error(
       "Gagal mengambil data mata kuliah untuk reschedule: " +
         (coursesError?.message || "Tidak ada data"),

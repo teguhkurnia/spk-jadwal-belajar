@@ -69,8 +69,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      has_overload_risk: rescheduleResult.has_overload_risk,
-      warning: rescheduleResult.warning_notification,
+      has_overload_risk: rescheduleResult.schedule.some((s) => s.is_overload),
+      warning: rescheduleResult.schedule.some((s) => s.is_overload)
+        ? "Beberapa jadwal melebihi batas halaman maksimal per hari. Silakan pertimbangkan untuk menambah batas halaman maksimal atau mengurangi jumlah mata kuliah."
+        : null,
       message: "Jadwal berhasil disusun ulang mulai hari ini.",
     });
   } catch (error: any) {

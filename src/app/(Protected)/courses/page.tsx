@@ -14,10 +14,10 @@ async function CoursesData() {
 
   const { data: courses } = await supabase
     .from("courses")
-    .select("*")
+    .select("*, milestones(readed_pages)")
     .order("created_at", { ascending: false });
 
-  return <CoursesClient initialCourses={courses || []} />;
+  return <CoursesClient initialCourses={(courses as Course[]) || []} />;
 }
 
 export default function CoursesPage() {

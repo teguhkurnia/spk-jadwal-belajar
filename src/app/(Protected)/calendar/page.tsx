@@ -56,7 +56,7 @@ const fetchSchedule = async (): Promise<EventSourceInput> => {
           course: item.courses,
           from_page: item.from_page,
           to_page: item.to_page,
-          milestone: item.milestones,
+          milestone: item.milestones!,
           course_id: item.course_id,
           is_overload: item.is_overload,
           id: item.id,
@@ -101,27 +101,35 @@ const fetchSchedule = async (): Promise<EventSourceInput> => {
     });
 
     // add Tuton and Exam events
-    const tutonEvents = scheduleEvents.concat(
-      [3, 5, 7].map((week, index) => {
-        const milestoneDate = milestone(semesterData.start_tuton_date, week);
-        const endMilestoneDate = milestone(
-          semesterData.start_tuton_date,
-          week + 2,
-        );
-        return {
-          title: `Tuton ${index + 1}`,
-          start: milestoneDate!.toISOString().split("T")[0],
-          end: endMilestoneDate!.toISOString().split("T")[0],
-          allDay: true,
-          color: "#8b5cf6EE", // default purple for milestone events
-          extendedProps: {
-            type: "tuton",
-          },
-        };
-      }),
-    );
+    const tutonEvents = [3, 5, 7].map((week, index) => {
+      const milestoneDate = milestone(semesterData.start_tuton_date, week);
+      const endMilestoneDate = milestone(
+        semesterData.start_tuton_date,
+        week + 2,
+      );
+      return {
+        title: `Tuton ${index + 1}`,
+        start: milestoneDate!.toISOString().split("T")[0],
+        end: endMilestoneDate!.toISOString().split("T")[0],
+        allDay: true,
+        color: "#8b5cf6EE", // default purple for milestone events
+        extendedProps: {
+          type: "tuton",
+        },
+      };
+    });
 
-    return tutonEvents;
+    const examEvents = coursesData
+      .filter((course) => course.exam_date)
+      .map((course) => ({
+        title: `Ujian ${course.title}`,
+        start: course.exam_date,
+        allDay: true,
+      }));
+
+    scheduleEvents.push(...examEvents, ...tutonEvents);
+
+    return scheduleEvents;
   } catch (error) {
     console.error("Error fetching schedule:", error);
     return [];

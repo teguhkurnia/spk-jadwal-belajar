@@ -14,6 +14,9 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "./ui/button";
 import { AddCourseModal } from "./add-course-modal";
+import z from "zod";
+import { courseSchema } from "@/actions/type";
+import { addCourse } from "@/actions/course";
 
 export function NavMain({
   items,
@@ -25,6 +28,18 @@ export function NavMain({
   }[];
 }) {
   const [open, setOpen] = React.useState(false);
+
+  const [isAddLoading, setIsAddLoading] = React.useState(false);
+
+  const handleAddCourse = async (data: z.infer<typeof courseSchema>) => {
+    setIsAddLoading(true);
+    const result = await addCourse({}, data);
+    setIsAddLoading(false);
+    if (result.success) {
+    } else if (result.error) {
+      console.error(result.error);
+    }
+  };
 
   return (
     <>
@@ -68,7 +83,12 @@ export function NavMain({
         </SidebarGroupContent>
       </SidebarGroup>
 
-      <AddCourseModal open={open} onOpenChange={setOpen} />
+      <AddCourseModal
+        open={open}
+        onOpenChange={setOpen}
+        onSave={handleAddCourse}
+        isLoading={isAddLoading}
+      />
     </>
   );
 }

@@ -3,67 +3,53 @@ import { createClient } from "./utils/supabase/middleware";
 
 const AUTH_ROUTES = ["/login", "/register"];
 
-const PROTECTED_ROUTES = [
-  "/dashboard",
-  "/onboarding",
-  "/courses",
-  "/settings",
-  "calendar",
-];
+const PROTECTED_ROUTES = ["/dashboard", "/courses", "/settings", "/calendar"];
 
 export async function proxy(request: NextRequest) {
   const supabase = createClient(request);
 
   const {
     data: { session },
-    error: sessionError,
   } = await supabase.auth.getSession();
 
-  const isAuthRoute = AUTH_ROUTES.some((route) =>
-    request.nextUrl.pathname.startsWith(route),
-  );
+  const user = session?.user;
 
+  const pathname = request.nextUrl.pathname;
+  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
   const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
-    request.nextUrl.pathname.startsWith(route),
+    pathname.startsWith(route),
+  );
+  const isOnboardingRoute = pathname.startsWith("/onboarding");
+
+  if (!user) {
+    if (isProtectedRoute || isOnboardingRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
+
+  const isOnboardingComplete = Boolean(
+    user.app_metadata?.is_onboarding_complete,
   );
 
-  // check auth routes
-  if (session && isAuthRoute) {
+  if (isAuthRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = isOnboardingComplete ? "/dashboard" : "/onboarding";
+    return NextResponse.redirect(url);
+  }
+
+  if (!isOnboardingComplete && isProtectedRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/onboarding";
+    return NextResponse.redirect(url);
+  }
+
+  if (isOnboardingComplete && isOnboardingRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
-
-    // if not completed onboarding, redirect to onboarding page
-    if (!session.user.app_metadata?.is_onboarding_complete) {
-      url.pathname = "/onboarding";
-    }
-
     return NextResponse.redirect(url);
-  }
-
-  if (!session && !isAuthRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
-  }
-
-  //   if onboarding route
-  if (session && request.nextUrl.pathname.startsWith("/onboarding")) {
-    // if completed onboarding, redirect to dashboard
-    if (session.user.app_metadata?.is_onboarding_complete) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/dashboard";
-      return NextResponse.redirect(url);
-    }
-  }
-
-  // check protected routes
-  if (session && isProtectedRoute) {
-    // if not completed onboarding, redirect to onboarding page
-    if (!session.user.app_metadata?.is_onboarding_complete) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/onboarding";
-      return NextResponse.redirect(url);
-    }
   }
 
   return NextResponse.next();

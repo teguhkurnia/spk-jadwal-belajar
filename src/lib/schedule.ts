@@ -149,7 +149,11 @@ const selectWinningCourse = ({
 }): CourseTracker => {
   const decisionMatrix = activeCourses.map((c) => {
     const m = getActiveMilestone(c)!;
-    const effDaysLeft = countEffectiveDays(currentDate, m.deadline, daysOfWeek);
+    const effDaysLeft = countEffectiveDays(
+      currentDate,
+      dayjs(m.deadline).subtract(1, "day").format("YYYY-MM-DD"),
+      daysOfWeek,
+    );
     return {
       id: c.id,
       c1_daysLeft: Math.max(1, effDaysLeft), // Cost: Sisa hari ujian
@@ -254,7 +258,7 @@ const planDay = ({
   const winningMilestone = getActiveMilestone(winner)!;
   const effDaysLeftWinner = countEffectiveDays(
     currentDate,
-    winningMilestone.deadline,
+    dayjs(winningMilestone.deadline).subtract(1, "day").format("YYYY-MM-DD"),
     daysOfWeek,
   );
 
@@ -271,7 +275,11 @@ const planDay = ({
   // Validasi Overload untuk SEMUA matkul aktif
   activeCourses.forEach((c) => {
     const m = getActiveMilestone(c)!;
-    const effDaysLeft = countEffectiveDays(currentDate, m.deadline, daysOfWeek);
+    const effDaysLeft = countEffectiveDays(
+      currentDate,
+      dayjs(m.deadline).subtract(1, "day").format("YYYY-MM-DD"),
+      daysOfWeek,
+    );
 
     // Validasi juga menggunakan Estimasi Sesi agar akurat
     const minRequired = getMinRequiredPages(

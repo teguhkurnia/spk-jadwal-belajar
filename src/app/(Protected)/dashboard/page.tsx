@@ -21,10 +21,7 @@ async function DashboardData() {
   });
 
   return (
-    <DashboardClient
-      initialSemester={activeSemester}
-      userEmail={session!.user.email}
-    />
+    <DashboardClient initialSemester={activeSemester} user={session!.user} />
   );
 }
 

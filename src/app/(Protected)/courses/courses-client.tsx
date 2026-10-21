@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +11,7 @@ import {
   BookOpenIcon,
 } from "@phosphor-icons/react";
 import { CalendarIcon } from "lucide-react";
-import { deleteCourse } from "@/actions/course";
+import { addCourse, deleteCourse } from "@/actions/course";
 import { AddCourseModal } from "@/components/add-course-modal";
 import { EditCourseModal } from "@/components/edit-course-modal";
 import {
@@ -21,13 +20,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import z from "zod";
+import { courseSchema } from "@/actions/type";
 
 export function CoursesClient({
   initialCourses,
 }: {
   initialCourses: Course[];
 }) {
-  const router = useRouter();
   const [courses, setCourses] = React.useState<Course[]>(initialCourses);
   const [isAddOpen, setIsAddOpen] = React.useState(false);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
@@ -35,14 +35,15 @@ export function CoursesClient({
     null,
   );
   const [loadingId, setLoadingId] = React.useState<string | null>(null);
+  const [isAddLoading, setIsAddLoading] = React.useState(false);
 
   const fetchCourses = async () => {
     const supabase = createClient();
     const { data } = await supabase
       .from("courses")
-      .select("*")
+      .select("*, milestones(readed_pages)")
       .order("created_at", { ascending: false });
-    if (data) setCourses(data);
+    if (data) setCourses(data as Course[]);
   };
 
   const handleDelete = async (id: string) => {
@@ -55,6 +56,18 @@ export function CoursesClient({
       console.error(result.error);
     }
     setLoadingId(null);
+  };
+
+  const handleAddCourse = async (data: z.infer<typeof courseSchema>) => {
+    setIsAddLoading(true);
+    const result = await addCourse({}, data);
+    setIsAddLoading(false);
+    if (result.success) {
+      setIsAddOpen(false);
+      fetchCourses();
+    } else if (result.error) {
+      console.error(result.error);
+    }
   };
 
   return (
@@ -93,13 +106,17 @@ export function CoursesClient({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {courses.map((course) => {
+            const readedPages =
+              course.milestones?.reduce(
+                (sum, m) => sum + (m.readed_pages || 0),
+                0,
+              ) ?? (course.completed_pages || 0);
+
             const progress =
               course.page_count > 0
                 ? Math.min(
                     100,
-                    Math.round(
-                      ((course.completed_pages || 0) / course.page_count) * 100,
-                    ),
+                    Math.round((readedPages / course.page_count) * 100),
                   )
                 : 0;
 
@@ -180,7 +197,7 @@ export function CoursesClient({
                       Progress Selesai
                     </span>
                     <span>
-                      {progress}% ({course.completed_pages || 0}/
+                      {progress}% ({readedPages}/
                       {course.page_count} hal)
                     </span>
                   </div>
@@ -206,6 +223,8 @@ export function CoursesClient({
           setIsAddOpen(open);
           if (!open) fetchCourses();
         }}
+        onSave={handleAddCourse}
+        isLoading={isAddLoading}
       />
 
       <EditCourseModal

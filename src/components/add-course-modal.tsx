@@ -1,16 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { useActionState } from "react";
-import { addCourse, type AddCourseState } from "@/actions/course";
 
+import { courseSchema } from "@/actions/type";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Field,
-  FieldLabel,
-  FieldContent,
-} from "@/components/ui/field";
 import {
   Dialog,
   DialogClose,
@@ -20,6 +13,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Field, FieldContent, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import z from "zod";
 
 const COLOR_PRESETS = [
   "#3b82f6",
@@ -34,24 +30,66 @@ const COLOR_PRESETS = [
 interface AddCourseModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSave: (data: z.infer<typeof courseSchema>) => void;
+  isLoading?: boolean;
 }
 
-export function AddCourseModal({ open, onOpenChange }: AddCourseModalProps) {
+export function AddCourseModal({
+  open,
+  onOpenChange,
+  onSave,
+  isLoading,
+}: AddCourseModalProps) {
   const [selectedColor, setSelectedColor] = React.useState("#3b82f6");
+  const [milestones, setMilestones] = React.useState({
+    milestone1: 0,
+    milestone2: 0,
+    milestone3: 0,
+  });
   const formRef = React.useRef<HTMLFormElement>(null);
 
-  const [state, formAction, isPending] = useActionState<AddCourseState, FormData>(
-    addCourse,
-    {},
-  );
+  const onSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
-  React.useEffect(() => {
-    if (state.success) {
-      formRef.current?.reset();
-      setSelectedColor("#3b82f6");
-      onOpenChange(false);
-    }
-  }, [state, onOpenChange]);
+    const formData = new FormData(event.currentTarget as HTMLFormElement);
+
+    const data: z.infer<typeof courseSchema> = {
+      title: formData.get("title") as string,
+      credits: Number(formData.get("credits")),
+      pageCount: Number(formData.get("pageCount")),
+      examDate: formData.get("examDate") as string,
+      color: formData.get("color") as string,
+      milestone1: Number(formData.get("milestone1")),
+      milestone2: Number(formData.get("milestone2")),
+      milestone3: Number(formData.get("milestone3")),
+    };
+
+    onSave(data);
+  };
+
+  const handlePageCountChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const pageCount = Number(event.target.value);
+
+    // Generate milstone predictions based on the page count
+    // with ratio 6:5:4
+    // the total must be equal to pageCount
+    const milestone1 = Math.floor((pageCount * 6) / 15);
+    const milestone2 = Math.floor((pageCount * 5) / 15);
+    const milestone3 = Math.floor((pageCount * 4) / 15);
+
+    const total = milestone1 + milestone2 + milestone3;
+
+    // Adjust the last milestone to ensure the total matches the page count
+    const adjustedMilestone3 = milestone3 + (pageCount - total);
+
+    setMilestones({
+      milestone1,
+      milestone2,
+      milestone3: adjustedMilestone3,
+    });
+  };
 
   return (
     <Dialog
@@ -65,19 +103,13 @@ export function AddCourseModal({ open, onOpenChange }: AddCourseModalProps) {
       }}
     >
       <DialogContent className="sm:max-w-md">
-        <form ref={formRef} action={formAction} className="space-y-4">
+        <form ref={formRef} onSubmit={onSubmit} className="space-y-4">
           <DialogHeader>
             <DialogTitle>Tambah Mata Kuliah Baru</DialogTitle>
             <DialogDescription>
               Isi rincian mata kuliah untuk dimasukkan ke jadwal belajar.
             </DialogDescription>
           </DialogHeader>
-
-          {state.error && (
-            <div className="rounded-md bg-destructive/10 p-3 text-xs text-destructive">
-              {state.error}
-            </div>
-          )}
 
           <Field>
             <FieldLabel htmlFor="course-title">
@@ -120,22 +152,16 @@ export function AddCourseModal({ open, onOpenChange }: AddCourseModalProps) {
                   min={1}
                   defaultValue={100}
                   required
+                  onChange={handlePageCountChange}
                 />
               </FieldContent>
             </Field>
           </div>
 
           <Field>
-            <FieldLabel htmlFor="course-exam">
-              Tanggal Ujian (KTPU)
-            </FieldLabel>
+            <FieldLabel htmlFor="course-exam">Tanggal Ujian (KTPU)</FieldLabel>
             <FieldContent>
-              <Input
-                id="course-exam"
-                name="examDate"
-                type="date"
-                required
-              />
+              <Input id="course-exam" name="examDate" type="date" required />
             </FieldContent>
           </Field>
 
@@ -166,15 +192,49 @@ export function AddCourseModal({ open, onOpenChange }: AddCourseModalProps) {
             <div className="grid grid-cols-3 gap-2">
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Tuton 1</p>
-                <Input name="milestone1" type="number" min={0} defaultValue={0} />
+                <Input
+                  name="milestone1"
+                  type="number"
+                  min={0}
+                  value={milestones.milestone1}
+                  onChange={(e) =>
+                    setMilestones((prev) => ({
+                      ...prev,
+                      milestone1: Number(e.target.value),
+                    }))
+                  }
+                />
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Tuton 2</p>
-                <Input name="milestone2" type="number" min={0} defaultValue={0} />
+                <Input
+                  name="milestone2"
+                  type="number"
+                  min={0}
+                  defaultValue={0}
+                  value={milestones.milestone2}
+                  onChange={(e) =>
+                    setMilestones((prev) => ({
+                      ...prev,
+                      milestone2: Number(e.target.value),
+                    }))
+                  }
+                />
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Tuton 3</p>
-                <Input name="milestone3" type="number" min={0} defaultValue={0} />
+                <Input
+                  name="milestone3"
+                  type="number"
+                  min={0}
+                  value={milestones.milestone3}
+                  onChange={(e) =>
+                    setMilestones((prev) => ({
+                      ...prev,
+                      milestone3: Number(e.target.value),
+                    }))
+                  }
+                />
               </div>
             </div>
           </Field>
@@ -182,13 +242,13 @@ export function AddCourseModal({ open, onOpenChange }: AddCourseModalProps) {
           <DialogFooter className="pt-2">
             <DialogClose
               render={
-                <Button type="button" variant="outline" disabled={isPending}>
+                <Button type="button" variant="outline" disabled={isLoading}>
                   Batal
                 </Button>
               }
             />
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Menyimpan..." : "Tambah"}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Menyimpan..." : "Tambah"}
             </Button>
           </DialogFooter>
         </form>

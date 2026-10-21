@@ -17,11 +17,15 @@ import { Slider } from "@/components/ui/slider";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { match } from "ts-pattern";
+import { AnimatePresence, motion } from "motion/react";
 import { milestone } from "@/lib/utils";
 import { PlusIcon, TrashIcon, BookOpenIcon } from "@phosphor-icons/react";
 import { CalendarIcon } from "lucide-react";
 import { saveOnboardingData } from "@/actions/onboarding";
 import { createClient } from "@/utils/supabase/client";
+import { AddCourseModal } from "@/components/add-course-modal";
+import { courseSchema } from "@/actions/type";
+import z from "zod";
 
 const DAYS = [
   { id: "Senin", label: "Senin", weekend: false },
@@ -43,6 +47,21 @@ const COLOR_PRESETS = [
   "#06b6d4",
 ] as const;
 
+const stepVariants = {
+  enter: (dir: number) => ({
+    x: dir > 0 ? 30 : -30,
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+  },
+  exit: (dir: number) => ({
+    x: dir > 0 ? -30 : 30,
+    opacity: 0,
+  }),
+};
+
 interface LocalCourse {
   id: string;
   title: string;
@@ -58,6 +77,13 @@ interface LocalCourse {
 export default function OnboardingPageClient() {
   const router = useRouter();
   const [step, setStep] = React.useState<1 | 2 | 3 | 4 | 5>(1);
+  const [direction, setDirection] = React.useState<1 | -1>(1);
+
+  const goToStep = (nextStep: 1 | 2 | 3 | 4 | 5) => {
+    setDirection(nextStep > step ? 1 : -1);
+    setStep(nextStep);
+  };
+
   const [semesterName, setSemesterName] = React.useState("Semester 1");
   const [kmaks, setKmaks] = React.useState(30);
   const [days, setDays] = React.useState<string[]>(DAYS.map((d) => d.id));
@@ -109,211 +135,223 @@ export default function OnboardingPageClient() {
       <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]"></div>
       <div className="flex min-h-dvh items-center justify-center p-4">
         <div
-          className={`w-full ${step === 5 ? "max-w-3xl" : "max-w-xl"} space-y-4 transition-all`}
+          className={`w-full ${step === 5 ? "max-w-3xl" : "max-w-xl"} space-y-4 transition-all duration-300 overflow-hidden`}
         >
           {errorMsg && (
             <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2 text-center mb-4">
               {errorMsg}
             </p>
           )}
-          {match(step)
-            .with(1, () => (
-              <div className="flex flex-col items-center gap-6">
-                <h1 className="text-2xl font-medium leading-tight text-center">
-                  Selamat datang di Asisten Belajar Mandiri PJJ! Mari atur
-                  profil semester agar sistem bisa menyusun jadwal yang paling
-                  realistis untuk Anda.
-                </h1>
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={step}
+              custom={direction}
+              variants={stepVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.22, ease: "easeInOut" }}
+              className="w-full"
+            >
+              {match(step)
+                .with(1, () => (
+                  <div className="flex flex-col items-center gap-6">
+                    <h1 className="text-2xl font-medium leading-tight text-center">
+                      Selamat datang di Asisten Belajar Mandiri PJJ! Mari atur
+                      profil semester agar sistem bisa menyusun jadwal yang
+                      paling realistis untuk Anda.
+                    </h1>
 
-                <div className="w-full space-y-2 text-left">
-                  <Label htmlFor="semester-name">Nama Semester</Label>
-                  <Input
-                    id="semester-name"
-                    value={semesterName}
-                    onChange={(e) => setSemesterName(e.target.value)}
-                    placeholder="Contoh: 2026.1 / Semester 1"
-                    required
-                  />
-                </div>
+                    <div className="w-full space-y-2 text-left">
+                      <Label htmlFor="semester-name">Nama Semester</Label>
+                      <Input
+                        id="semester-name"
+                        value={semesterName}
+                        onChange={(e) => setSemesterName(e.target.value)}
+                        placeholder="Contoh: 2026.1 / Semester 1"
+                        required
+                      />
+                    </div>
 
-                <Separator />
+                    <Separator />
 
-                <Button type="button" onClick={() => setStep(2)}>
-                  Lanjutkan
-                </Button>
-              </div>
-            ))
-            .with(2, () => (
-              <div className="space-y-6">
-                <h1 className="text-2xl font-medium leading-tight text-center mb-10">
-                  Berapa batas maksimal halaman modul yang sanggup Anda pelajari
-                  dalam satu hari?
-                </h1>
-
-                <Separator />
-
-                <div className="flex items-center justify-between gap-2">
-                  <Label htmlFor="">Max Halaman</Label>
-                  <span className="text-sm text-muted-foreground">
-                    {kmaks} hal/hari
-                  </span>
-                </div>
-                <Slider
-                  max={200}
-                  step={1}
-                  onValueChange={(value) => setKmaks(value as number)}
-                  value={kmaks}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Note: Jika auto-reschedule &gt; {kmaks} hal/hari, sistem
-                  memicu Overload Alert!
-                </p>
-
-                <div className="flex items-center gap-2 justify-center">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setStep(1)}
-                  >
-                    Kembali
-                  </Button>
-                  <Button type="button" onClick={() => setStep(3)}>
-                    Lanjutkan
-                  </Button>
-                </div>
-              </div>
-            ))
-            .with(3, () => (
-              <div className="space-y-6">
-                <h1 className="text-2xl font-medium leading-tight text-center mb-10">
-                  Kapan Anda biasanya memiliki waktu luang untuk fokus belajar?
-                </h1>
-
-                <Separator />
-
-                {/* Badges Checkboxes */}
-                <div className="flex flex-wrap gap-2.5 justify-center max-w-lg mx-auto">
-                  {DAYS.map((d) => {
-                    const checked = days.includes(d.id);
-                    return (
-                      <Badge
-                        key={d.id}
-                        variant={checked ? "default" : "outline"}
-                        className="cursor-pointer p-5 min-w-30 text-center"
-                        onClick={() => toggleDay(d.id)}
-                      >
-                        {d.label}
-                      </Badge>
-                    );
-                  })}
-                </div>
-
-                <div className="flex items-center gap-2 justify-center">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setStep(2)}
-                  >
-                    Kembali
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => setStep(4)}
-                    disabled={days.length === 0}
-                  >
-                    Lanjutkan
-                  </Button>
-                </div>
-              </div>
-            ))
-            .with(4, () => (
-              <>
-                <div className="space-y-6">
-                  <h1 className="text-2xl font-medium leading-tight text-center mb-10">
-                    Tentukan kerangka waktu akademik semester ini agar sistem
-                    dapat menyusun milestone tugas Anda.
-                  </h1>
-
-                  <Separator />
-
-                  {/* Badges Checkboxes */}
-                  <div className="space-y-2">
-                    <Label htmlFor="tuton">
-                      Tanggal Mulai Tutorial Online (Tuton)
-                    </Label>
-                    <Input
-                      id="tuton"
-                      type="date"
-                      value={tutonDate}
-                      onChange={(e) => setTutonDate(e.target.value)}
-                      required
-                    />
-                    {tutonDate && (
-                      <div className="rounded border bg-muted/40 p-2.5 text-xs space-y-1">
-                        <p className="font-semibold text-foreground">
-                          Acuan Jadwal Milestone Tugas:
-                        </p>
-                        <p>
-                          • Tuton 1 (Minggu ke-3):{" "}
-                          <span className="font-medium text-foreground">
-                            {milestone(tutonDate, 3)?.toLocaleDateString(
-                              "id-ID",
-                            )}
-                          </span>
-                        </p>
-                        <p>
-                          • Tuton 2 (Minggu ke-5):{" "}
-                          <span className="font-medium text-foreground">
-                            {milestone(tutonDate, 5)?.toLocaleDateString(
-                              "id-ID",
-                            )}
-                          </span>
-                        </p>
-                        <p>
-                          • Tuton 3 (Minggu ke-7):{" "}
-                          <span className="font-medium text-foreground">
-                            {milestone(tutonDate, 7)?.toLocaleDateString(
-                              "id-ID",
-                            )}
-                          </span>
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  <Separator />
-
-                  <div className="flex items-center gap-2 justify-center">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setStep(3)}
-                    >
-                      Kembali
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => setStep(5)}
-                      disabled={!tutonDate}
-                    >
+                    <Button type="button" onClick={() => goToStep(2)}>
                       Lanjutkan
                     </Button>
                   </div>
-                </div>
-              </>
-            ))
-            .with(5, () => (
-              <Step5Courses
-                localCourses={localCourses}
-                setLocalCourses={setLocalCourses}
-                tutonDate={tutonDate}
-                loading={loading}
-                onBack={() => setStep(4)}
-                onFinish={onFinish}
-              />
-            ))
-            .otherwise(() => (
-              <></>
-            ))}
+                ))
+                .with(2, () => (
+                  <div className="space-y-6">
+                    <h1 className="text-2xl font-medium leading-tight text-center mb-10">
+                      Berapa batas maksimal halaman modul yang sanggup Anda
+                      pelajari dalam satu hari?
+                    </h1>
+
+                    <Separator />
+
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="">Max Halaman</Label>
+                      <span className="text-sm text-muted-foreground">
+                        {kmaks} hal/hari
+                      </span>
+                    </div>
+                    <Slider
+                      max={200}
+                      step={1}
+                      onValueChange={(value) => setKmaks(value as number)}
+                      value={kmaks}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Note: Jika auto-reschedule &gt; {kmaks} hal/hari, sistem
+                      memicu Overload Alert!
+                    </p>
+
+                    <div className="flex items-center gap-2 justify-center">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => goToStep(1)}
+                      >
+                        Kembali
+                      </Button>
+                      <Button type="button" onClick={() => goToStep(3)}>
+                        Lanjutkan
+                      </Button>
+                    </div>
+                  </div>
+                ))
+                .with(3, () => (
+                  <div className="space-y-6">
+                    <h1 className="text-2xl font-medium leading-tight text-center mb-10">
+                      Kapan Anda biasanya memiliki waktu luang untuk fokus
+                      belajar?
+                    </h1>
+
+                    <Separator />
+
+                    {/* Badges Checkboxes */}
+                    <div className="flex flex-wrap gap-2.5 justify-center max-w-lg mx-auto">
+                      {DAYS.map((d) => {
+                        const checked = days.includes(d.id);
+                        return (
+                          <Badge
+                            key={d.id}
+                            variant={checked ? "default" : "outline"}
+                            className="cursor-pointer p-5 min-w-30 text-center"
+                            onClick={() => toggleDay(d.id)}
+                          >
+                            {d.label}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex items-center gap-2 justify-center">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => goToStep(2)}
+                      >
+                        Kembali
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => goToStep(4)}
+                        disabled={days.length === 0}
+                      >
+                        Lanjutkan
+                      </Button>
+                    </div>
+                  </div>
+                ))
+                .with(4, () => (
+                  <div className="space-y-6">
+                    <h1 className="text-2xl font-medium leading-tight text-center mb-10">
+                      Tentukan kerangka waktu akademik semester ini agar sistem
+                      dapat menyusun milestone tugas Anda.
+                    </h1>
+
+                    <Separator />
+
+                    {/* Badges Checkboxes */}
+                    <div className="space-y-2">
+                      <Label htmlFor="tuton">
+                        Tanggal Mulai Tutorial Online (Tuton)
+                      </Label>
+                      <Input
+                        id="tuton"
+                        type="date"
+                        value={tutonDate}
+                        onChange={(e) => setTutonDate(e.target.value)}
+                        required
+                      />
+                      {tutonDate && (
+                        <div className="rounded border bg-muted/40 p-2.5 text-xs space-y-1">
+                          <p className="font-semibold text-foreground">
+                            Acuan Jadwal Milestone Tugas:
+                          </p>
+                          <p>
+                            • Tuton 1 (Minggu ke-3):{" "}
+                            <span className="font-medium text-foreground">
+                              {milestone(tutonDate, 3)?.toLocaleDateString(
+                                "id-ID",
+                              )}
+                            </span>
+                          </p>
+                          <p>
+                            • Tuton 2 (Minggu ke-5):{" "}
+                            <span className="font-medium text-foreground">
+                              {milestone(tutonDate, 5)?.toLocaleDateString(
+                                "id-ID",
+                              )}
+                            </span>
+                          </p>
+                          <p>
+                            • Tuton 3 (Minggu ke-7):{" "}
+                            <span className="font-medium text-foreground">
+                              {milestone(tutonDate, 7)?.toLocaleDateString(
+                                "id-ID",
+                              )}
+                            </span>
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <Separator />
+
+                    <div className="flex items-center gap-2 justify-center">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => goToStep(3)}
+                      >
+                        Kembali
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => goToStep(5)}
+                        disabled={!tutonDate}
+                      >
+                        Lanjutkan
+                      </Button>
+                    </div>
+                  </div>
+                ))
+                .with(5, () => (
+                  <Step5Courses
+                    localCourses={localCourses}
+                    setLocalCourses={setLocalCourses}
+                    tutonDate={tutonDate}
+                    loading={loading}
+                    onBack={() => goToStep(4)}
+                    onFinish={onFinish}
+                  />
+                ))
+                .otherwise(() => (
+                  <></>
+                ))}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </>
@@ -345,32 +383,12 @@ function Step5Courses({
   const [milestone3, setMilestone3] = React.useState(0);
   const [showAddForm, setShowAddForm] = React.useState(false);
 
-  const handleAddCourse = (e: React.FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!title || !examDate) return;
+  const handleAddCourse = (data: z.infer<typeof courseSchema>) => {
+    setLocalCourses((prev) => [
+      ...prev,
+      data as LocalCourse, // Type assertion to LocalCourse
+    ]);
 
-    const newCourse: LocalCourse = {
-      id: Math.random().toString(36).substring(2, 9),
-      title,
-      credits,
-      pageCount,
-      examDate,
-      color,
-      milestone1,
-      milestone2,
-      milestone3,
-    };
-
-    setLocalCourses((prev) => [...prev, newCourse]);
-    setTitle("");
-    setCredits(3);
-    setPageCount(100);
-    setExamDate("");
-    setColor("#3b82f6");
-    setMilestone1(0);
-    setMilestone2(0);
-    setMilestone3(0);
     setShowAddForm(false);
   };
 
@@ -390,136 +408,20 @@ function Step5Courses({
           type="button"
           onClick={() => setShowAddForm(true)}
           className="gap-2"
+          disabled={loading}
         >
           <PlusIcon className="size-4" />
           <span>Tambah Mata Kuliah</span>
         </Button>
       </div>
 
-      <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-        <DialogContent className="sm:max-w-md">
-          <form onSubmit={handleAddCourse} className="space-y-4 text-left">
-            <DialogHeader>
-              <DialogTitle>Tambah Mata Kuliah Baru</DialogTitle>
-              <DialogDescription>
-                Isi rincian mata kuliah untuk dimasukkan ke jadwal belajar.
-              </DialogDescription>
-            </DialogHeader>
+      <AddCourseModal
+        onOpenChange={setShowAddForm}
+        open={showAddForm}
+        isLoading={loading}
+        onSave={handleAddCourse}
+      />
 
-            <div className="space-y-2">
-              <Label htmlFor="c-title">Nama / Judul Mata Kuliah</Label>
-              <Input
-                id="c-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Contoh: Pemrograman Berbasis Web"
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="c-credits">Jumlah SKS</Label>
-                <Input
-                  id="c-credits"
-                  type="number"
-                  min={1}
-                  max={10}
-                  value={credits}
-                  onChange={(e) => setCredits(Number(e.target.value))}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="c-pages">Jumlah Halaman Modul</Label>
-                <Input
-                  id="c-pages"
-                  type="number"
-                  min={1}
-                  value={pageCount}
-                  onChange={(e) => setPageCount(Number(e.target.value))}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="c-exam">Tanggal Ujian (KTPU)</Label>
-              <Input
-                id="c-exam"
-                type="date"
-                value={examDate}
-                onChange={(e) => setExamDate(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Warna Label</Label>
-              <div className="flex items-center gap-2 pt-1">
-                {COLOR_PRESETS.map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => setColor(preset)}
-                    className={`size-6 rounded-full transition-transform ${
-                      color === preset
-                        ? "scale-125 ring-2 ring-ring ring-offset-2"
-                        : "hover:scale-110"
-                    }`}
-                    style={{ backgroundColor: preset }}
-                    aria-label={`Pilih warna ${preset}`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Target Halaman per Milestone</Label>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Tuton 1</p>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={milestone1}
-                    onChange={(e) => setMilestone1(Number(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Tuton 2</p>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={milestone2}
-                    onChange={(e) => setMilestone2(Number(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Tuton 3</p>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={milestone3}
-                    onChange={(e) => setMilestone3(Number(e.target.value))}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter className="pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowAddForm(false)}
-              >
-                Batal
-              </Button>
-              <Button type="submit">Tambah</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
       {localCourses.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
           <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">

@@ -1,12 +1,12 @@
 "use server";
 
-import { cookies } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
-import { milestone } from "@/lib/utils";
-import { z } from "zod";
-import { revalidatePath } from "next/cache";
+import { addCourses } from "@/lib/course";
 import { reschedule } from "@/lib/reschedule";
+import { createClient } from "@/utils/supabase/server";
+import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { courseSchema } from "./type";
+import z from "zod";
 
 export type AddCourseState = {
   error?: string;
@@ -15,20 +15,9 @@ export type AddCourseState = {
 
 export async function addCourse(
   _prev: AddCourseState,
-  formData: FormData,
+  formData: z.infer<typeof courseSchema>,
 ): Promise<AddCourseState> {
-  const raw = {
-    title: formData.get("title") as string,
-    credits: Number(formData.get("credits")),
-    pageCount: Number(formData.get("pageCount")),
-    examDate: formData.get("examDate") as string,
-    color: formData.get("color") as string,
-    milestone1: Number(formData.get("milestone1")),
-    milestone2: Number(formData.get("milestone2")),
-    milestone3: Number(formData.get("milestone3")),
-  };
-
-  const parsed = courseSchema.safeParse(raw);
+  const parsed = courseSchema.safeParse(formData);
   if (!parsed.success) {
     return { error: parsed.error.issues[0].message };
   }
@@ -59,54 +48,9 @@ export async function addCourse(
 
   const tutonDate = currentSemester.data.start_tuton_date;
 
-  const milestones = [
-    {
-      title: "Tuton 1",
-      target_pages: values.milestone1,
-      deadline: milestone(tutonDate, 3),
-    },
-    {
-      title: "Tuton 2",
-      target_pages: values.milestone2,
-      deadline: milestone(tutonDate, 5),
-    },
-    {
-      title: "Tuton 3",
-      target_pages: values.milestone3,
-      deadline: milestone(tutonDate, 7),
-    },
-  ].filter((m) => m.target_pages > 0);
-
-  const { error, data } = await supabase
-    .from("courses")
-    .insert({
-      user_id: user.id,
-      semester_id: currentSemester.data.id,
-      title: values.title,
-      credits: values.credits,
-      page_count: values.pageCount,
-      exam_date: values.examDate,
-      color: values.color,
-    })
-    .select("id");
-
-  if (error) return { error: error.message };
-
-  if (data && data.length > 0) {
-    const courseId = data[0].id;
-    const { error: milestoneError } = await supabase.from("milestones").insert(
-      milestones.map((m) => ({
-        user_id: user.id,
-        course_id: courseId,
-        title: m.title,
-        target_pages: m.target_pages,
-        deadline: m.deadline!,
-        semester_id: currentSemester.data.id,
-      })),
-    );
-
-    if (milestoneError) return { error: milestoneError.message };
-  }
+  await addCourses(supabase, user.id, currentSemester.data.id, tutonDate, [
+    values,
+  ]);
 
   // Reschedule dailt schedules after adding a new course and its milestones
   await reschedule({

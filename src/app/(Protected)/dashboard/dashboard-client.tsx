@@ -15,15 +15,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dayjs from "dayjs";
 import { getCurrentDay } from "@/lib/utils";
+import { Session } from "@supabase/supabase-js";
 
 interface DashboardClientProps {
   initialSemester: any;
-  userEmail?: string;
+  user: Session["user"];
 }
 
 export function DashboardClient({
   initialSemester,
-  userEmail,
+  user,
 }: DashboardClientProps) {
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
@@ -197,9 +198,6 @@ export function DashboardClient({
     }
   };
 
-  const userName = userEmail ? userEmail.split("@")[0] : "Mahasiswa";
-  const formattedName = userName.charAt(0).toUpperCase() + userName.slice(1);
-
   if (loading && !semester) {
     return (
       <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full animate-pulse">
@@ -235,7 +233,7 @@ export function DashboardClient({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            Halo, {formattedName} 👋
+            Halo, {user.user_metadata.full_name} 👋
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Pusat kendali harian PJJ Anda. Fokus satu mata kuliah per hari untuk
