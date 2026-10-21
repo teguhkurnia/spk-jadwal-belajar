@@ -355,6 +355,23 @@ export function generateFullSchedule(params: GenerateScheduleParams) {
   const currentDate = startDateInput ? new Date(startDateInput) : new Date();
   currentDate.setHours(0, 0, 0, 0);
 
+  const allMilestones = courses.flatMap((c) => c.milestones || []);
+  const isAllMilestonesOverdue =
+    allMilestones.length > 0 &&
+    allMilestones.every((m) =>
+      dayjs(m.deadline).isBefore(dayjs(currentDate), "day"),
+    );
+
+  if (isAllMilestonesOverdue) {
+    return {
+      k_maks: kMaks,
+      has_overload_risk: false,
+      warning_notification: null,
+      total_study_days: 0,
+      schedule: [],
+    };
+  }
+
   const trackers = createTrackers(courses);
 
   // Looping Hari demi Hari sampai SEMUA halaman habis
