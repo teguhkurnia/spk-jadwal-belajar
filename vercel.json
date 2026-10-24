@@ -3,7 +3,7 @@
     "crons": [
         {
             "path": "/api/cron/auto-reschedule",
-            "schedule": "0 1 * * *"
+            "schedule": "0 18 * * *"
         }
     ]
 }
