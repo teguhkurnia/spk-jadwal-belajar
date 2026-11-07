@@ -146,6 +146,7 @@ export function AddCourseModal({
                   type="number"
                   min={1}
                   max={10}
+                  step={1}
                   defaultValue={3}
                   required
                 />
@@ -163,6 +164,7 @@ export function AddCourseModal({
                   min={1}
                   defaultValue={100}
                   required
+                  step={1}
                   onChange={handlePageCountChange}
                 />
               </FieldContent>
@@ -190,6 +192,7 @@ export function AddCourseModal({
                   max={currentPageCount}
                   defaultValue={0}
                   placeholder="0"
+                  step={1}
                 />
               </FieldContent>
               <p className="text-xs text-muted-foreground mt-1">
@@ -231,6 +234,7 @@ export function AddCourseModal({
                   type="number"
                   min={0}
                   value={milestones.milestone1}
+                  step={1}
                   onChange={(e) =>
                     setMilestones((prev) => ({
                       ...prev,
@@ -245,6 +249,7 @@ export function AddCourseModal({
                   name="milestone2"
                   type="number"
                   min={0}
+                  step={1}
                   defaultValue={0}
                   value={milestones.milestone2}
                   onChange={(e) =>
@@ -260,6 +265,7 @@ export function AddCourseModal({
                 <Input
                   name="milestone3"
                   type="number"
+                  step={1}
                   min={0}
                   value={milestones.milestone3}
                   onChange={(e) =>
