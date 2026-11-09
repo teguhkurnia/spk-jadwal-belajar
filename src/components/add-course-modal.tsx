@@ -98,6 +98,19 @@ export function AddCourseModal({
     });
   };
 
+  React.useEffect(() => {
+    if (!open) {
+      formRef.current?.reset();
+      // set random color from COLOR_PRESETS
+      const randomColor =
+        COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)];
+      setSelectedColor(randomColor);
+      handlePageCountChange({
+        target: { value: "100" },
+      } as React.ChangeEvent<HTMLInputElement>);
+    }
+  }, [open]);
+
   return (
     <Dialog
       open={open}
@@ -232,7 +245,7 @@ export function AddCourseModal({
                 <Input
                   name="milestone1"
                   type="number"
-                  min={0}
+                  min={1}
                   value={milestones.milestone1}
                   step={1}
                   onChange={(e) =>
@@ -248,7 +261,7 @@ export function AddCourseModal({
                 <Input
                   name="milestone2"
                   type="number"
-                  min={0}
+                  min={1}
                   step={1}
                   defaultValue={0}
                   value={milestones.milestone2}
@@ -266,7 +279,7 @@ export function AddCourseModal({
                   name="milestone3"
                   type="number"
                   step={1}
-                  min={0}
+                  min={1}
                   value={milestones.milestone3}
                   onChange={(e) =>
                     setMilestones((prev) => ({

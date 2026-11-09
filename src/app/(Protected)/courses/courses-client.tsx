@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import z from "zod";
 import { courseSchema } from "@/actions/type";
+import { toast } from "sonner";
 
 export function CoursesClient({
   initialCourses,
@@ -67,6 +68,9 @@ export function CoursesClient({
       fetchCourses();
     } else if (result.error) {
       console.error(result.error);
+      toast.error(
+        result.error || "Terjadi kesalahan saat menambahkan mata kuliah.",
+      );
     }
   };
 
@@ -110,7 +114,8 @@ export function CoursesClient({
               course.milestones?.reduce(
                 (sum, m) => sum + (m.readed_pages || 0),
                 0,
-              ) ?? (course.completed_pages || 0);
+              ) ??
+              (course.completed_pages || 0);
 
             const progress =
               course.page_count > 0
@@ -197,8 +202,7 @@ export function CoursesClient({
                       Progress Selesai
                     </span>
                     <span>
-                      {progress}% ({readedPages}/
-                      {course.page_count} hal)
+                      {progress}% ({readedPages}/{course.page_count} hal)
                     </span>
                   </div>
                   <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">

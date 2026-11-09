@@ -1,6 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { Toaster } from "@/components/ui/sonner";
 
 export default async function ProtectedLayout({
   children,
@@ -24,6 +25,8 @@ export default async function ProtectedLayout({
             {children}
           </div>
         </div>
+
+        <Toaster />
       </SidebarInset>
     </SidebarProvider>
   );
